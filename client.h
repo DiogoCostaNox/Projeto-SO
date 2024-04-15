@@ -1,0 +1,2 @@
+#define TAMANHO_ARG 300
+#define SERVIDOR 1024
