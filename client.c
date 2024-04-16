@@ -1,49 +1,59 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include "client.h"
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "client.h"
 
-char percurso[1024];
-
-
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[]) 
 {
-    if(argc < 4)
+    if(strcmp(argv[0],"execute"))
     {
-        printf("Missing argument\n");
-        ./exit(1);
-    }
-
-    char *caminho = argv[2];
-    strcpy(percurso, caminho);
-    int tamanho_total = 0;
-    int time = atoi(argv[1]);
-    char *args[argc - 2];
-
-    for(int i = 3; i < argc-3; i++)
-    {
-        args[i] = argv[i + 3];
-        tamanho_total += strlen(argv[i + 3]);   
-        if (total_arg_length > MAX_ARG_SIZE) {
-            printf("Erro: o tamanho total dos argumentos excede %d bytes\n", MAX_ARG_SIZE);
+        if (argc < 3) 
+        {
+            printf("Uso: %s <tempo> <programa> [args]\n", argv[0]);
             return 1;
         }
-    }
-    args[args-3] = NULL;
 
-    if(fork() == 0)
-    {
-        execvp(prog,args);
-        perror("execvp falhou"):
-        exit(1);
-    }
+        int tempo_exec = atoi(argv[1]);
+        char *programa = argv[2];
+        char *args = "";
 
-    usleep(time * 1000);
+        for (int i = 3; i < argc; i++) {
+            strcat(args, argv[i]);
+            strcat(args, " ");
+        }
+
+        mkfifo(FIFO_FILE, 0666);
+
+        int fifo_client_orchestrator = open(FIFO_FILE)
+
+        if (fifo_client_orchatstrator < 0)
+        {
+            perror("Erro ao abrir o fifo");
+            return 1;
+        }
+
+        char buffer[1024];
+        sprintf(buffer, "%d %s %s", tempo_exec, programa, args);
+        write(fifo_client_orchastrator,buffer,strlen(buffer));
+
+        close(fifo_client_orchastrator);
+
+        fifo_client_orchastrator = open(FIFO_FILE, O_RDONLY);
+        if (fifo_client_orchastrator < 0) {
+            perror("Erro ao abrir o pipe com nome");
+            return 1;
+        }
+
+        char id[256];
+        read(fifo_client_orchastrator, id, 256);
+        printf("Identificador da tarefa: %s\n", id);
+
+        close(fifo_client_orchastrator);
+    }
 
     return 0;
 }
