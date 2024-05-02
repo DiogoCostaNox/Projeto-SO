@@ -11,22 +11,22 @@ int main(int argc, char *argv[])
 {
     char* client_id = "";
     mkfifo(client_id,0600);
+
     if(strcmp(argv[0],"execute"))
     {
-        /*
-        Cria tarefa
-        Task task;
-        task->id = id;
-        task->id_client = client_id;
-        task->pedido = pedido;
-        task->estado = "Espera";
-        */
-        if (argc < 3) 
-        {
-            printf("Uso: %s <tempo> <programa> [args]\n", argv[0]);
-            return 1;
+        struct Task tarefa;
+        tarefa.programa = argv[2]; 
+        for (int i = 3; i < argc && i < TAMANHO_ARG + 3; i++) {
+            tarefa.args[i - 3] = argv[i];
         }
+        tarefa.args[i - 3] = NULL; 
 
+        struct Msg mensagem;
+        mensagem.tasks = tarefa;
+        mensagem.client_id = "id_do_cliente";
+        mensagem.id = 1;
+        mensagem.tempoExp = argv[1];
+           
         int fifo_client_orchestrator = open("orchestrator",0600);
 
         if (fifo_client_orchestrator < 0)
@@ -37,8 +37,7 @@ int main(int argc, char *argv[])
 
         int pid = getpid();
         char buffer[1024];
-        sprintf(buffer, "%d %s %s", tempo_exec, programa, args);
-        msg->client_id = client_id;
+        sprintf(buffer, "%d %s ", mensagem.tempoExp, mensagem.tasks);
         write(fifo_client_orchastrator,buffer,strlen(buffer));
 
         close(fifo_client_orchastrator);
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
     }
     else if(strcmp(argv[0],"status"))
     {
-        Status *status = ...;
+        Status status[1024];
         
         fifo_client = open(client_id, O_RDONLY);
         read(fifo_client,status,...);
@@ -58,14 +57,12 @@ int main(int argc, char *argv[])
         print("Waiting\n");
         for(int i = 0; i < waiting->size; i++)
             print(....)
-        print("Waiting\n");
+        print("Executing\n");
         for(int i = 0; i < exec->size; i++)
             print(....)
-        print("Waiting\n");
+        print("Finish\n");
         for(int i = 0; i < finish->size; i++)
             print(....)
-
-        
     }
 
     return 0;

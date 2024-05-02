@@ -44,60 +44,23 @@ int trata_pedido(Msg *msg, Status *status) {
         msgresposta->time = final_time - initial_time;
 
         for(int i = 0;  i < number_tasks; i++)
-            close(pipes[i])
-
+        {
+            close(pipes[i]);
+        }
         char *client_id = msg->client_id;
         int fifo_client = open(client_id, O_WRONLY);
         write(fifo_client,mensagem_resposta,sizeof(mensagem_resposta));
         int fd = open("orchestrator", O_WRONLY);
         write(fd,acabei_pedido(msg->id),sizeof(msg->id))
     }
-    else {
+    else 
+    {
         char *client_id = msg->client_id;
         int fifo_client = open(client_id, O_WRONLY);
         write(fifo_client,status,sizeof(status));
     }
 }
 
-/**
-Status:
-    - tasks : [1024];
-    - size = 0;
-
-add_task(Task task) {
-    tasks[size-1] = task;
-    size++;
-}
-exec_task(id) {
-    Task task = tasks[id];
-    task->executar();
-}
-
-remove_task(id) {
-    Task task = tasks[id];
-    task->finish();
-}
-*/
-
-
-
-
-/*
-Task:
-    - pedido ...
-    - estado = "Espera"
-
-executar(Task task) {
-    task->estado = "Executar"
-}
-
-finish(Task task) {
-    task->estado = "Acabou"
-}
-
-
-
-*/
 
 int main()
 {
@@ -123,3 +86,40 @@ int main()
 
 	return 0;
 }
+
+/**
+Status:
+    - tasks : [1024];
+    - size = 0;
+
+add_task(Task task) {
+    tasks[size-1] = task;
+    size++;
+}
+exec_task(id) {
+    Task task = tasks[id];
+    task->executar();
+}
+
+remove_task(id) {
+    Task task = tasks[id];
+    task->finish();
+}
+*/
+
+/*
+Task:
+    - pedido ...
+    - estado = "Espera"
+
+executar(Task task) {
+    task->estado = "Executar"
+}
+
+finish(Task task) {
+    task->estado = "Acabou"
+}
+
+
+
+*/
