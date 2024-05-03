@@ -10,11 +10,30 @@
 int compare(const void *a, const void *b) {
     return ((struct Process *)a)->burst_time - ((struct Process *)b)->burst_time;
 }
-/**
-Task:
-    char *programa;
-    char **args;
-*/
+
+void criarFila(Fila* f) {
+    f->inicio = f->fim = 0;
+}
+
+void addFila(Fila* f, TASK t) {
+    if((f->fim + 1) % MAX == f->inicio) {
+        printf("Fila cheia!\n");
+        return;
+    }
+    f->tarefas[f->fim] = t;
+    f->fim = (f->fim + 1) % MAX;
+}
+
+void removeFila(Fila* f) {
+    if(f->inicio == f->fim) {
+        printf("Fila vazia!\n");
+        exit(1); // Fila vazia
+    }
+    TASK t = f->tarefas[f->inicio];
+    f->inicio = (f->inicio + 1) % MAX;
+    return t;
+}
+
 int trata_pedido(Msg *msg, Status *status) {
 
     if(se pedido Ã© tarefas) {

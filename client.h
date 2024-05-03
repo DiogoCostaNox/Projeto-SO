@@ -1,47 +1,32 @@
 #define TAMANHO_ARG 300
 #define SERVIDOR 1024
-#define FIFO_FILE "FIFO_CLIENT_ORCHESTRATOR"
+#define MAX 100
 
-struct Msg {
-    Task* tasks; 
+typedef struct msg {
+    TASK* tasks; 
     char* client_id; 
     int id;
     int tempoExp;
-};
+} MSG;
 
-struct Task {
+typedef struct waitqueue
+{
+    TASK* tarefa;
+    struct waitqueue *next;
+} *WAITQUEUE;
+
+typedef struct task {
     char* programa; 
     char* args[TAMANHO_ARG];
-};
+} TASK;
 
-struct MsgResposta {
+typedef struct msgResposta {
     long timeRes;
-};
+} MSGRESPOSTA;
 
-struct Status {
-    void add_task(int task_id) {   
-    }
-
-    void exec_task(int task_id) {
-    }
-
-    void remove_task(int task_id) {
-    }
-};
-
-struct Waiting {
-    Task* tasks; 
-    int size; 
-};
-
-struct Exec {
-    Task* tasks; 
-    int size;
-};
-
-struct Finish {
-    Task* tasks; 
-    int size; 
-};
+typedef struct {
+    TASK* tarefaZada;
+    int inicio, fim;
+} Fila;
 
 

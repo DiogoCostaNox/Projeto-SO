@@ -10,9 +10,9 @@
 int main(int argc, char *argv[]) 
 {
     char* client_id = "";
-    mkfifo(client_id,0600);
+    mkfifo(client_id,0666);
 
-    if(strcmp(argv[0],"execute"))
+    if(strcmp(argv[0],"execute"))   
     {
         struct Task tarefa;
         tarefa.programa = argv[2]; 
@@ -36,13 +36,14 @@ int main(int argc, char *argv[])
         }
 
         int pid = getpid();
-        char buffer[1024];
-        sprintf(buffer, "%d %s ", mensagem.tempoExp, mensagem.tasks);
-        write(fifo_client_orchastrator,buffer,strlen(buffer));
+        char buffer[320];
+        sprintf(buffer, "%d %d %s ", mensagem.tempoExp, mensagem.id, mensagem.tasks);
+        write(fifo_client_orchestrator,buffer,strlen(buffer));
 
-        close(fifo_client_orchastrator);
+        close(fifo_client_orchestrator);
 
         fifo_client = open(client_id, O_RDONLY);
+
         read(fifo_client,resposta,...);
     }
     else if(strcmp(argv[0],"status"))
