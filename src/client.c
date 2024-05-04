@@ -7,6 +7,26 @@
 #include <unistd.h>
 #include "client.h"
 
+void printMsgs(int size, MSG *msgs) {
+    char msgprint[1000] = "";
+    for(int i = 0; i < size; i++) {
+        MSG msg = msgs[i];
+        char time[20];
+        sprintf(time, "%d", msg.tempoExp);
+        msg.tempoExp;
+        strcat(msgprint,time);
+        strcat(msgprint," ");
+        strcat(msgprint,msg.tasks->programa);
+        for(int j = 0; j < TAMANHO_ARG; j++) {
+            strcat(msgprint," ");
+            strcat(msgprint,msg.tasks->args[j]);
+        }
+        strcat("\n");
+        write(1,msgprint,sizeof(msgprint));
+        msgprint = ""
+    }
+}
+
 int main(int argc, char *argv[]) 
 {
     char* client_id = "";
@@ -48,38 +68,20 @@ int main(int argc, char *argv[])
     }
     else if(strcmp(argv[0],"status"))
     {
-        Status status[1024];
+        STATUS status;
         
         fifo_client = open(client_id, O_RDONLY);
         read(fifo_client,status,...);
-        Waiting *waiting = status->waiting();
-        Exec *exec = status->exec();
-        Finish *finish = status->finish();
-        print("Waiting\n");
-        for(int i = 0; i < waiting->size; i++)
-            print(....)
-        print("Executing\n");
-        for(int i = 0; i < exec->size; i++)
-            print(....)
-        print("Finish\n");
-        for(int i = 0; i < finish->size; i++)
-            print(....)
+        char waiting[20] = "Waiting:\n";
+        char running[20] = "Running:\n";
+        char completed[20] = "Completed:\n";
+        write(1,waiting,sizeof(waiting))
+        printMsgs(status.waiting_size,status.waiting);
+        write(1,waiting,sizeof(running))
+        printMsgs(status.running_size,status.running);
+        write(1,waiting,sizeof(completed))
+        printMsgs(status.completed_size,status.completed);
     }
 
     return 0;
 }
-/**
-orchestrator
-clientes -> servidor
-
-0:
-servidor -> client 0
-1:
-servidor -> client 1
-2:
-servidor -> client 2
-3:
-servidor -> client 3
-
-
-*/
