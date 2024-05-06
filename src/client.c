@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
         TASK tarefa;
         tarefa.programa = argv[2]; 
         int i;
+        
+        printf("%s\n", tarefa.programa);
+
         for (i = 3; i < argc && i < TAMANHO_ARG + 3; i++) {
             tarefa.args[i - 3] = argv[i];                   // Vai preencher os argumentos associados ao programa da tarefa em questao
         }
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
         mensagem.tempoExp = atoi(argv[1]);
         mensagem.tipodepedido = 1;
            
-        int fifo_client_orchestrator = open("orchestrator", O_WRONLY); // WRONLY significa que so tem permissao de escrita
+        int fifo_client_orchestrator = open("orchestrator", O_RDWR); // WRONLY significa que so tem permissao de escrita
 
         if (fifo_client_orchestrator < 0)
         {

@@ -60,26 +60,35 @@ void print(char *id, time_t initial_time, time_t final_time) {
 }
 
 int trata_pedido(MSG *msg, STATUS *status) {
-    char filename[20] = "output";
+    char filename[20] = " ";
     sprintf(filename, "%d", msg->client_id);
-    int fifo_client = open(filename, O_WRONLY);
+    TASK tarefa = msg->tasks;
+
+
+    if (mkfifo(filename, 0666) < 0) 
+     {
+        perror("mkfifo");
+        return -1;
+     }
+
+    int fifo_client = open(filename, O_RDWR);
 
     if(msg->tipodepedido == 1) 
     {
         printf("Pedido reconhecido como tipo 1\n");
-        int output = open(filename, O_WRONLY | O_CREAT, 0644);
-        if (output < 0) {
+        
+        if (fifo_client < 0) {
             perror("open");
+            printf("open error\n"); 
             return -1;
         }
-        dup2(output, 1);
-        
+        dup2(fifo_client, 1);
         
         
         time_t initial_time = time(NULL);
 
         if(fork() == 0) {
-            TASK tarefa = msg->tasks;
+            printf("Programa: %s",tarefa.programa);
             printf("execvp(%s)",tarefa.programa);
             execvp(tarefa.programa,tarefa.args);
             exit(0);
@@ -89,7 +98,7 @@ int trata_pedido(MSG *msg, STATUS *status) {
         wait(&status);
 
         MSGRESPOSTA msgresposta;
-        read(output,&msgresposta,sizeof(msgresposta));
+        read(fifo_client,&msgresposta,sizeof(msgresposta));
         time_t final_time = time(NULL);
         msgresposta.timeRes = final_time - initial_time;
 
@@ -99,7 +108,7 @@ int trata_pedido(MSG *msg, STATUS *status) {
         write(fd,"pedido finalizado",sizeof(msg->id));
         print(filename,initial_time,final_time);
     
-        close(output);
+        close(fifo_client);
     }
     else {
         write(fifo_client,status,sizeof(*status));
@@ -147,6 +156,9 @@ void executar_pedido(STATUS *status,MSG buff) {
     exec_task(status,buff.client_id);
     if (fork() == 0)
     {
+        TASK tarefa = buff.tasks;
+        printf("Executando pedido\n");
+        printf("%d",tarefa.tipo);
         trata_pedido(&buff,status);
     }
         
@@ -168,8 +180,10 @@ int main()
         MSG buff;
         buff.tipodepedido = 0;
         read (fd,&buff,sizeof(buff));
+        
          // le a mensagem com a tarefa
         if(buff.tipodepedido != 0) {
+
             add_task(&status,buff);
             printf("Pedido adicionado\n");
             executar_pedido(&status,buff);
