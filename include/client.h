@@ -5,13 +5,16 @@
 typedef struct task {
     char* programa; 
     char* args[TAMANHO_ARG];
+    int tipo;
 } TASK;
 
 typedef struct msg {
-    TASK* tasks; 
+    TASK tasks; 
     int client_id; 
     int id;
     int tempoExp;
+    int number_tasks;
+    int tipodepedido;
 } MSG;
 
 typedef struct waitqueue

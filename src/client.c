@@ -11,43 +11,48 @@ void printMsgs(int size, MSG *msgs) {
     char msgprint[1000] = "";
     for(int i = 0; i < size; i++) {
         MSG msg = msgs[i];
-        char time[20];
+        char time[20];                            // Da print ao conteudo da mensagem mandada pelo cliente ao servidor 
         sprintf(time, "%d", msg.tempoExp);
-        msg.tempoExp;
         strcat(msgprint,time);
         strcat(msgprint," ");
-        strcat(msgprint,msg.tasks->programa);
+        strcat(msgprint,msg.tasks.programa);
         for(int j = 0; j < TAMANHO_ARG; j++) {
             strcat(msgprint," ");
-            strcat(msgprint,msg.tasks->args[j]);
+            strcat(msgprint,msg.tasks.args[j]);
         }
-        strcat("\n");
+        strcat(msgprint,"\n");
         write(1,msgprint,sizeof(msgprint));
-        msgprint = ""
+        strcpy(msgprint,"");
     }
 }
 
 int main(int argc, char *argv[]) 
 {
-    char* client_id = "";
-    mkfifo(client_id,0666);
-
-    if(strcmp(argv[0],"execute"))   
+    
+    
+    if(strcmp(argv[1],"execute") == 0) // argv[1] should be used instead of argv[0]
     {
-        struct Task tarefa;
+        TASK tarefa;
         tarefa.programa = argv[2]; 
-        for (int i = 3; i < argc && i < TAMANHO_ARG + 3; i++) {
-            tarefa.args[i - 3] = argv[i];
+        int i;
+        for (i = 3; i < argc && i < TAMANHO_ARG + 3; i++) {
+            tarefa.args[i - 3] = argv[i];                   // Vai preencher os argumentos associados ao programa da tarefa em questao
         }
-        tarefa.args[i - 3] = NULL; 
+        tarefa.args[i - 3] = NULL;
 
-        struct Msg mensagem;
+        for(int i = 0; tarefa.args[i] != NULL; i++) {
+            printf("%s\n", tarefa.args[i]);
+        }
+
+        tarefa.tipo = 1;
+
+        MSG mensagem;
         mensagem.tasks = tarefa;
-        mensagem.client_id = "id_do_cliente";
-        mensagem.id = 1;
-        mensagem.tempoExp = argv[1];
+        mensagem.client_id = getpid();               // Vai buscar o id do processo que sera usado como id do cliente.
+        mensagem.tempoExp = atoi(argv[1]);
+        mensagem.tipodepedido = 1;
            
-        int fifo_client_orchestrator = open("orchestrator",0600);
+        int fifo_client_orchestrator = open("orchestrator", O_WRONLY); // WRONLY significa que so tem permissao de escrita
 
         if (fifo_client_orchestrator < 0)
         {
@@ -55,32 +60,35 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        int pid = getpid();
-        char buffer[320];
-        sprintf(buffer, "%d %d %s ", mensagem.tempoExp, mensagem.id, mensagem.tasks);
-        write(fifo_client_orchestrator,buffer,strlen(buffer));
+        // Use mensagem.tasks->programa instead of mensagem.tasks
+        write(fifo_client_orchestrator,&mensagem,sizeof(mensagem));
 
         close(fifo_client_orchestrator);
 
-        fifo_client = open(client_id, O_RDONLY);
-
-        read(fifo_client,resposta,...);
+        int fifo_client = open("client_id", O_RDONLY);
+    
+        char resposta[320];
+        read(fifo_client,resposta,320);
+        printf("%d",mensagem.tipodepedido);
     }
-    else if(strcmp(argv[0],"status"))
+    else if(strcmp(argv[1],"status") == 0) // argv[1] should be used instead of argv[0] and compare with 0
     {
         STATUS status;
-        
-        fifo_client = open(client_id, O_RDONLY);
-        read(fifo_client,status,...);
-        char waiting[20] = "Waiting:\n";
+        int fifo_client = open("client_id", O_RDONLY);
+        read(fifo_client,&status,sizeof(status));
+        char waiting[20] = "Waiting:\n";                            // Vai dar display do estado das tarefas
         char running[20] = "Running:\n";
         char completed[20] = "Completed:\n";
-        write(1,waiting,sizeof(waiting))
+        write(1,waiting,strlen(waiting)); // Use strlen instead of sizeof
         printMsgs(status.waiting_size,status.waiting);
-        write(1,waiting,sizeof(running))
+        write(1,running,strlen(running)); // Use strlen instead of sizeof
         printMsgs(status.running_size,status.running);
-        write(1,waiting,sizeof(completed))
+        write(1,completed,strlen(completed)); // Use strlen instead of sizeof
         printMsgs(status.completed_size,status.completed);
+    }
+    else
+    {
+        printf("Comando invalido\n");
     }
 
     return 0;
