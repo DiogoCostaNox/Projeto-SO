@@ -1,10 +1,11 @@
 #define TAMANHO_ARG 300
 #define SERVIDOR 1024
 #define MAX 100
+#define MAX_PROGRAMA 100
 
 typedef struct task {
-    char* programa; 
-    char* args[TAMANHO_ARG];
+    char programa[MAX_PROGRAMA]; 
+    char args[TAMANHO_ARG];
     int tipo;
 } TASK;
 

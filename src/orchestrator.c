@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include "client.h"
 
+#define MAX_PROGRAMA 100
+#define MAX_ARGS 300
+
 // int compare(const void *a, const void *b) {
 //     return ((struct Process*)a)->burst_time - ((struct Process*)b)->burst_time;
 // }
@@ -64,7 +67,6 @@ int trata_pedido(MSG *msg, STATUS *status) {
     sprintf(filename, "%d", msg->client_id);
     TASK tarefa = msg->tasks;
 
-
     if (mkfifo(filename, 0666) < 0) 
      {
         perror("mkfifo");
@@ -77,20 +79,47 @@ int trata_pedido(MSG *msg, STATUS *status) {
     {
         printf("Pedido reconhecido como tipo 1\n");
         
-        if (fifo_client < 0) {
-            perror("open");
-            printf("open error\n"); 
-            return -1;
-        }
-        dup2(fifo_client, 1);
-        
+        // if (fifo_client < 0) {
+        //     perror("open");
+        //     printf("open error\n"); 
+        //     return -1;
+        // }
+        // dup2(fifo_client, 1);
         
         time_t initial_time = time(NULL);
 
-        if(fork() == 0) {
-            printf("Programa: %s",tarefa.programa);
-            printf("execvp(%s)",tarefa.programa);
-            execvp(tarefa.programa,tarefa.args);
+         if(fork() == 0) {
+            
+            printf("Programa: %s\n",tarefa.programa);
+            printf("execvp(%s)\n",tarefa.programa);
+            
+            int arg_count = 1;  // Start at 1 for the program name
+            for (char *p = tarefa.args; *p != '\0'; p++) {
+            if (*p == ' ') arg_count++;
+         }
+
+          // Allocate the args array
+         char **args = malloc((arg_count + 2) * sizeof(char *));  // +2 for the program name and the NULL terminator
+          if (args == NULL) {
+              perror("malloc failed");
+             exit(1);
+            }
+
+           // Split tarefa.args into separate arguments
+           args[0] = tarefa.programa;
+           char *token = strtok(tarefa.args, " ");
+           for (int i = 1; i <= arg_count; i++) {
+              args[i] = token;
+              token = strtok(NULL, " ");
+             }
+            args[arg_count + 1] = NULL;
+
+           // Execute the program
+           execvp(tarefa.programa, args);
+
+          // Free the args array
+           free(args);
+        
             exit(0);
         }
 
@@ -123,7 +152,6 @@ void add_task(STATUS *status,MSG msg) {
     status->waiting_size++;
 }
 
-// removes a mensagem da fila de espera
 void exec_task(STATUS *status,int msg_id) {
     int i = 0;
     for(; i < status->waiting_size; i++) {
@@ -166,7 +194,6 @@ void executar_pedido(STATUS *status,MSG buff) {
 
 int main()
 {
-     // ler dos argumentos
     STATUS status;
     status.waiting_size = 0;
     status.running_size = 0;
@@ -181,7 +208,6 @@ int main()
         buff.tipodepedido = 0;
         read (fd,&buff,sizeof(buff));
         
-         // le a mensagem com a tarefa
         if(buff.tipodepedido != 0) {
 
             add_task(&status,buff);
@@ -194,7 +220,7 @@ int main()
         close(fd);
     }
 
-	return 0;
+    return 0;
 }
 
 /**
