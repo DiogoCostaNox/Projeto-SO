@@ -67,13 +67,7 @@ int trata_pedido(MSG *msg, STATUS *status) {
     sprintf(filename, "%d", msg->client_id);
     TASK tarefa = msg->tasks;
 
-    if (mkfifo(filename, 0666) < 0) 
-     {
-        perror("mkfifo");
-        return -1;
-     }
-
-    int fifo_client = open(filename, O_RDWR);
+    int fifo_client = open(filename, O_WRONLY);
 
     if(msg->tipodepedido == 1) 
     {
@@ -88,68 +82,55 @@ int trata_pedido(MSG *msg, STATUS *status) {
         
         time_t initial_time = time(NULL);
 
-         if(fork() == 0) {
-            
+        if(fork() == 0) {
             printf("Programa: %s\n",tarefa.programa);
             printf("execvp(%s)\n",tarefa.programa);
-            
             int arg_count = 1;  // Start at 1 for the program name
-            for (char *p = tarefa.args; *p != '\0'; p++) {
-            if (*p == ' ') arg_count++;
-         }
-
-          // Allocate the args array
-         char **args = malloc((arg_count + 2) * sizeof(char *));  // +2 for the program name and the NULL terminator
-          if (args == NULL) {
-              perror("malloc failed");
-             exit(1);
+            for (char *p = tarefa.args; *p != '\0'; p++)
+                if (*p == ' ') arg_count++;
+            // Allocate the args array
+            char **args = malloc((arg_count + 2) * sizeof(char *));  // +2 for the program name and the NULL terminator
+            if (args == NULL) {
+                perror("malloc failed");
+                exit(1);
             }
-
-           // Split tarefa.args into separate arguments
-           args[0] = tarefa.programa;
-           char *token = strtok(tarefa.args, " ");
-           for (int i = 1; i <= arg_count; i++) {
-              args[i] = token;
-              token = strtok(NULL, " ");
-             }
+            // Split tarefa.args into separate arguments
+            args[0] = tarefa.programa;
+            char *token = strtok(tarefa.args, " ");
+            for (int i = 1; i <= arg_count; i++) {
+                args[i] = token;
+                token = strtok(NULL, " ");
+            }
             args[arg_count + 1] = NULL;
-
-           // Execute the program
-           execvp(tarefa.programa, args);
-
-          // Free the args array
-           free(args);
-        
+            // Execute the program
+            execvp(tarefa.programa, args);
+            // Free the args array
+            free(args);
             exit(0);
         }
 
         int status;
         wait(&status);
-
-        MSGRESPOSTA msgresposta;
-        read(fifo_client,&msgresposta,sizeof(msgresposta));
         time_t final_time = time(NULL);
-        msgresposta.timeRes = final_time - initial_time;
-
-        write(fifo_client,&msgresposta,sizeof(msgresposta));
-
-        int fd = open("orchestrator", O_WRONLY);
-        write(fd,"pedido finalizado",sizeof(msg->id));
         print(filename,initial_time,final_time);
-    
-        close(fifo_client);
     }
     else {
-        write(fifo_client,status,sizeof(*status));
+        printf("status: %d %d %d %d\n",status->waiting_size, status->running_size, status->completed_size,sizeof(STATUS));
+        ssize_t bytes_read = write(fifo_client,status,sizeof(STATUS));
+        write(1,"Mandou\n",strlen("Mandou\n"));
     }
-    
     close(fifo_client);
+    int fd = open("orchestrator", O_WRONLY);
+    msg->tipodepedido=3;
+    write(fd,msg,sizeof(*msg));
+    close(fd);
     return 0;
 }
 
 void add_task(STATUS *status,MSG msg) {
     status->waiting[status->waiting_size] = msg;
     status->waiting_size++;
+    printf("1: %d %d %d\n",status->waiting_size, status->running_size, status->completed_size);
 }
 
 void exec_task(STATUS *status,int msg_id) {
@@ -164,6 +145,7 @@ void exec_task(STATUS *status,int msg_id) {
     }
     status->waiting_size--;
     status->running_size++;
+    printf("2: %d %d %d\n",status->waiting_size, status->running_size, status->completed_size);
 }
 
 void end_task(STATUS *status,int msg_id) {
@@ -178,6 +160,7 @@ void end_task(STATUS *status,int msg_id) {
     }
     status->running_size--;
     status->completed_size++;
+    printf("3: %d %d %d\n",status->waiting_size, status->running_size, status->completed_size);
 }
 
 void executar_pedido(STATUS *status,MSG buff) {
@@ -192,7 +175,7 @@ void executar_pedido(STATUS *status,MSG buff) {
         
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     STATUS status;
     status.waiting_size = 0;
@@ -203,23 +186,20 @@ int main()
     printf("Pipe criada\n");
     while(1)
     {
-        
         MSG buff;
         buff.tipodepedido = 0;
         read (fd,&buff,sizeof(buff));
-        
         if(buff.tipodepedido != 0) {
-
-            add_task(&status,buff);
-            printf("Pedido adicionado\n");
-            executar_pedido(&status,buff);
-            end_task(&status,buff.client_id);
-            
-                
+            if(buff.tipodepedido == 3)
+                end_task(&status,buff.client_id);
+            else {
+                add_task(&status,buff);
+                printf("Pedido adicionado\n");
+                executar_pedido(&status,buff);
+            }
         }
-        close(fd);
     }
-
+    close(fd);
     return 0;
 }
 

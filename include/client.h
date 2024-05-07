@@ -24,11 +24,6 @@ typedef struct waitqueue
     struct waitqueue *next;
 } *WAITQUEUE;
 
-
-typedef struct msgResposta {
-    long timeRes;
-} MSGRESPOSTA;
-
 typedef struct fila{
     MSG* tarefaZada;
     int inicio, fim;

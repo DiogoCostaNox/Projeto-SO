@@ -10,7 +10,8 @@
 #define MAX_PROGRAMA 100
 #define MAX_ARGS 300
 
-void printMsgs(int size, MSG *msgs) {
+void printMsgs(char* label, int size, MSG *msgs) {
+    write(1,label,strlen(label)); 
     char msgprint[1000] = "";
     for(int i = 0; i < size; i++) {
         MSG msg = msgs[i];
@@ -27,6 +28,28 @@ void printMsgs(int size, MSG *msgs) {
         write(1,msgprint,sizeof(msgprint));
         strcpy(msgprint,"");
     }
+}
+
+void sendMsg(MSG *mensagem) {
+    int fifo_client_orchestrator = open("orchestrator", O_RDWR); 
+    write(fifo_client_orchestrator,mensagem,sizeof(*mensagem));
+}
+
+void createMsg(MSG *mensagem) {
+    mensagem->client_id = getpid();  
+    mensagem->tipodepedido = 2;
+}
+
+void makeFifo(MSG *mensagem,char *filename) {
+    sprintf(filename, "%d", mensagem->client_id);
+    mkfifo(filename,0666);
+}
+
+void readStatus(STATUS *status,char *filename) {
+    int fifo_client = open(filename, O_RDONLY);
+    ssize_t bytes_read = read(fifo_client,status,sizeof(STATUS));
+    printf("Bytes total: %d\n",bytes_read);
+    close(fifo_client);
 }
 
 int main(int argc, char *argv[]) 
@@ -75,18 +98,17 @@ int main(int argc, char *argv[])
     }
     else if(strcmp(argv[1],"status") == 0) 
     {
+        char filename[20] = " ";
+        MSG mensagem;
         STATUS status;
-        int fifo_client = open("client_id", O_RDONLY);
-        read(fifo_client,&status,sizeof(status));
-        char waiting[20] = "Waiting:\n";                            
-        char running[20] = "Running:\n";
-        char completed[20] = "Completed:\n";
-        write(1,waiting,strlen(waiting)); 
-        printMsgs(status.waiting_size,status.waiting);
-        write(1,running,strlen(running)); 
-        printMsgs(status.running_size,status.running);
-        write(1,completed,strlen(completed)); 
-        printMsgs(status.completed_size,status.completed);
+        createMsg(&mensagem);
+        makeFifo(&mensagem,filename);
+        sendMsg(&mensagem);
+        readStatus(&status,filename);
+        printf("Recebido: %d %d %d %d\n",status.waiting_size, status.running_size, status.completed_size,sizeof(STATUS));
+        printMsgs("Waiting:\n",status.waiting_size,status.waiting);
+        printMsgs("Running:\n",status.running_size,status.running);
+        printMsgs("Completed:\n",status.completed_size,status.completed);
     }
     else
     {
